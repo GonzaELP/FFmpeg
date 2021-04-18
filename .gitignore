@@ -21,6 +21,9 @@
 *.version
 *.ptx
 *.ptx.c
+*.ts
+*.mp4
+*.m3u8
 *_g
 \#*
 .\#*
