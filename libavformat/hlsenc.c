@@ -210,6 +210,8 @@ typedef struct HLSContext {
     int segment_type;
     int resend_init_file;  ///< resend init file into disk after refresh m3u8
 
+    uint32_t gen_thumbnails;
+
     int use_localtime;      ///< flag to expand filename with localtime
     int use_localtime_mkdir;///< flag to mkdir dirname in timebased filename
     int allowcache;
@@ -1196,6 +1198,21 @@ static int hls_append_segment(struct AVFormatContext *s, HLSContext *hls,
         return 0;
     }
     vs->sequence++;
+
+    if(hls->gen_thumbnails){
+        char cmd_buff[500];
+        
+        char *ini_str;
+        char *last_str;
+        ini_str = malloc (strlen (vs->last_segment->filename) + 1);
+        strcpy (ini_str, vs->last_segment->filename);
+        last_str = strrchr(ini_str, '.');
+        *last_str = '\0';
+
+        sprintf(cmd_buff, "./ffmpeg -loglevel quiet -ss 00:00:00 -i %s -vframes 1 -q:v 2 %s.jpg",vs->last_segment->filename, ini_str);
+        system(cmd_buff);
+        free(ini_str);
+    }
 
     return 0;
 }
@@ -3156,6 +3173,7 @@ static const AVOption options[] = {
     {"independent_segments", "add EXT-X-INDEPENDENT-SEGMENTS, whenever applicable", 0, AV_OPT_TYPE_CONST, { .i64 = HLS_INDEPENDENT_SEGMENTS }, 0, UINT_MAX, E, "flags"},
     {"iframes_only", "add EXT-X-I-FRAMES-ONLY, whenever applicable", 0, AV_OPT_TYPE_CONST, { .i64 = HLS_I_FRAMES_ONLY }, 0, UINT_MAX, E, "flags"},
     {"hls_add_tag",    "adds an arbitrary tag to the output file", OFFSET(add_tag),      AV_OPT_TYPE_STRING, {.str = NULL},            0,       0,         E},
+    {"hls_gen_thumbnails", "generates a thumbnail for each segment", OFFSET(gen_thumbnails), AV_OPT_TYPE_BOOL, {.i64 = 0 }, 0, 1, E },
 #if FF_API_HLS_USE_LOCALTIME
     {"use_localtime", "set filename expansion with strftime at segment creation(will be deprecated)", OFFSET(use_localtime), AV_OPT_TYPE_BOOL, {.i64 = 0 }, 0, 1, E },
 #endif
